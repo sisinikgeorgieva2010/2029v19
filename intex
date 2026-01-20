@@ -1,0 +1,215 @@
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.text.DecimalFormat;
+
+public class DualPayCalculator extends JFrame {
+
+    // Константи
+    private static final double RATE = 1.95583;
+    private static final DecimalFormat df = new DecimalFormat("0.00");
+
+    // UI Компоненти
+    private JTextField txtDue;
+    private JTextField txtPaidBGN;
+    private JTextField txtPaidEUR;
+    private JLabel lblResultBig;
+    private JLabel lblResultSmall;
+    private JComboBox<String> comboCurrency;
+    private JPanel resultPanel;
+
+    public static void main(String[] args) {
+        // Стартиране на приложението
+        SwingUtilities.invokeLater(() -> {
+            try {
+                DualPayCalculator frame = new DualPayCalculator();
+                frame.setVisible(true);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
+    // Конструктор
+    public DualPayCalculator() {
+        setTitle("DualPay Calculator");
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setBounds(100, 100, 400, 550);
+        
+        // Основен панел (Лилав фон)
+        JPanel contentPane = new JPanel();
+        contentPane.setBackground(new Color(88, 28, 135)); // Тъмно лилаво
+        contentPane.setBorder(new EmptyBorder(20, 20, 20, 20));
+        setContentPane(contentPane);
+        contentPane.setLayout(null);
+
+        // --- ЗАГЛАВИЕ ---
+        JLabel lblTitle = new JLabel("DualPay");
+        lblTitle.setForeground(Color.WHITE);
+        lblTitle.setFont(new Font("SansSerif", Font.BOLD, 24));
+        lblTitle.setBounds(20, 10, 200, 30);
+        contentPane.add(lblTitle);
+
+        JLabel lblSubtitle = new JLabel("CALCULATOR");
+        lblSubtitle.setForeground(new Color(216, 180, 254)); // Светло лилаво
+        lblSubtitle.setFont(new Font("SansSerif", Font.BOLD, 10));
+        lblSubtitle.setBounds(22, 35, 100, 14);
+        contentPane.add(lblSubtitle);
+
+        // --- ВХОД: ДЪЛЖИМА СУМА ---
+        JLabel lblDue = new JLabel("Сума за плащане");
+        lblDue.setForeground(Color.WHITE);
+        lblDue.setBounds(20, 70, 150, 14);
+        contentPane.add(lblDue);
+
+        txtDue = createTextField();
+        txtDue.setBounds(20, 90, 220, 40);
+        contentPane.add(txtDue);
+
+        String[] currencies = {"BGN", "EUR"};
+        comboCurrency = new JComboBox<>(currencies);
+        comboCurrency.setBounds(250, 90, 80, 40);
+        comboCurrency.addActionListener(e -> calculate());
+        contentPane.add(comboCurrency);
+
+        // --- ВХОД: ПЛАТЕНО ---
+        JLabel lblPaidBGN = new JLabel("Платено в ЛЕВА");
+        lblPaidBGN.setForeground(Color.WHITE);
+        lblPaidBGN.setBounds(20, 150, 150, 14);
+        contentPane.add(lblPaidBGN);
+
+        txtPaidBGN = createTextField();
+        txtPaidBGN.setBounds(20, 170, 150, 40);
+        contentPane.add(txtPaidBGN);
+
+        JLabel lblPaidEUR = new JLabel("Платено в ЕВРО");
+        lblPaidEUR.setForeground(Color.WHITE);
+        lblPaidEUR.setBounds(190, 150, 150, 14);
+        contentPane.add(lblPaidEUR);
+
+        txtPaidEUR = createTextField();
+        txtPaidEUR.setBounds(190, 170, 150, 40);
+        contentPane.add(txtPaidEUR);
+
+        // --- РЕЗУЛТАТ (ПАНЕЛ) ---
+        resultPanel = new JPanel();
+        resultPanel.setBounds(20, 240, 320, 150);
+        resultPanel.setBackground(new Color(255, 255, 255));
+        resultPanel.setLayout(null);
+        resultPanel.setVisible(false); // Скрит в началото
+        contentPane.add(resultPanel);
+
+        JLabel lblResultTitle = new JLabel("РЕСТО ЗА ВРЪЩАНЕ");
+        lblResultTitle.setHorizontalAlignment(SwingConstants.CENTER);
+        lblResultTitle.setForeground(Color.GRAY);
+        lblResultTitle.setFont(new Font("SansSerif", Font.BOLD, 10));
+        lblResultTitle.setBounds(10, 10, 300, 14);
+        resultPanel.add(lblResultTitle);
+
+        lblResultBig = new JLabel("0.00 лв.");
+        lblResultBig.setHorizontalAlignment(SwingConstants.CENTER);
+        lblResultBig.setFont(new Font("SansSerif", Font.BOLD, 36));
+        lblResultBig.setForeground(new Color(88, 28, 135));
+        lblResultBig.setBounds(10, 40, 300, 50);
+        resultPanel.add(lblResultBig);
+
+        lblResultSmall = new JLabel("= 0.00 €");
+        lblResultSmall.setHorizontalAlignment(SwingConstants.CENTER);
+        lblResultSmall.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        lblResultSmall.setForeground(Color.DARK_GRAY);
+        lblResultSmall.setBounds(10, 90, 300, 20);
+        resultPanel.add(lblResultSmall);
+
+        // --- БУТОН ИЗЧИСЛИ (Ако автоматичното не сработи) ---
+        JButton btnCalc = new JButton("ИЗЧИСЛИ");
+        btnCalc.setBackground(Color.BLACK);
+        btnCalc.setForeground(Color.WHITE);
+        btnCalc.setBounds(100, 410, 160, 40);
+        btnCalc.addActionListener(e -> calculate());
+        contentPane.add(btnCalc);
+
+        // --- ФУТЪР ---
+        JLabel lblFooter = new JLabel("Курс: 1 EUR = 1.95583 BGN");
+        lblFooter.setHorizontalAlignment(SwingConstants.CENTER);
+        lblFooter.setForeground(Color.LIGHT_GRAY);
+        lblFooter.setBounds(0, 460, 380, 14);
+        contentPane.add(lblFooter);
+
+        JLabel lblAuthor = new JLabel("© Силвия Георгиева");
+        lblAuthor.setHorizontalAlignment(SwingConstants.CENTER);
+        lblAuthor.setForeground(Color.GRAY);
+        lblAuthor.setBounds(0, 480, 380, 14);
+        contentPane.add(lblAuthor);
+    }
+
+    // Помощен метод за създаване на текстови полета
+    private JTextField createTextField() {
+        JTextField tf = new JTextField();
+        tf.setFont(new Font("SansSerif", Font.BOLD, 18));
+        tf.setHorizontalAlignment(SwingConstants.CENTER);
+        // Добавяме слушател за всяко натискане на клавиш
+        tf.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyReleased(KeyEvent e) {
+                calculate();
+            }
+        });
+        return tf;
+    }
+
+    // --- ЛОГИКА ---
+    private void calculate() {
+        try {
+            // Взимане на стойностите (ако е празно -> 0)
+            double due = parseInput(txtDue.getText());
+            double paidBGN = parseInput(txtPaidBGN.getText());
+            double paidEUR = parseInput(txtPaidEUR.getText());
+
+            if (due == 0 && paidBGN == 0 && paidEUR == 0) {
+                resultPanel.setVisible(false);
+                return;
+            }
+
+            // Превалутиране към ЛЕВА
+            String selectedCurr = (String) comboCurrency.getSelectedItem();
+            double dueInBGN = (selectedCurr.equals("EUR")) ? due * RATE : due;
+            double paidInBGN = paidBGN + (paidEUR * RATE);
+
+            double diff = paidInBGN - dueInBGN;
+
+            resultPanel.setVisible(true);
+
+            if (diff < -0.009) {
+                // Недостиг
+                resultPanel.setBackground(new Color(254, 202, 202)); // Червеникаво
+                lblResultBig.setForeground(new Color(185, 28, 28)); // Тъмно червено
+                lblResultBig.setText("НЕДОСТИГ!");
+                double shortage = Math.abs(diff);
+                lblResultSmall.setText(df.format(shortage) + " лв.");
+            } else {
+                // Ресто
+                resultPanel.setBackground(Color.WHITE);
+                lblResultBig.setForeground(new Color(88, 28, 135)); // Лилаво
+                
+                double changeBGN = diff;
+                double changeEUR = diff / RATE;
+
+                lblResultBig.setText(df.format(changeBGN) + " лв.");
+                lblResultSmall.setText("= " + df.format(changeEUR) + " €");
+            }
+
+        } catch (Exception ex) {
+            // Игнорираме грешки при парсване докато пишем
+        }
+    }
+
+    private double parseInput(String text) {
+        if (text == null || text.isEmpty()) return 0.0;
+        // Заменяме запетая с точка за всеки случай
+        return Double.parseDouble(text.replace(",", "."));
+    }
+}
